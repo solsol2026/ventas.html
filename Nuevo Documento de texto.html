@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mi Caja</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 380px;
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+input {
+  width: 90%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 95%;
+  padding: 12px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-agregar { background: #28a745; color: white; }
+.btn-calcular { background: #007bff; color: white; }
+.btn-reset { background: #dc3545; color: white; }
+.btn-print { background: #6f42c1; color: white; }
+
+ul {
+  list-style: none;
+  padding: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  background: #f1f1f1;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.delete-btn {
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.total, .vuelto {
+  font-weight: bold;
+  margin: 10px;
+}
+
+/* ===== TICKET ===== */
+
+#ticket {
+  width: 100%;
+  max-width: 300px;
+  margin: auto;
+  font-family: monospace;
+  text-align: center;
+  background: white;
+  padding: 10px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  button {
+    display: none;
+  }
+
+  #ticket {
+    width: 80mm;
+    max-width: 80mm;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>🛒 Sistema de Ventas</h2>
+
+  <input type="text" id="producto" placeholder="Producto">
+  <input type="number" id="precio" placeholder="Precio">
+  <input type="number" id="cantidad" value="1">
+
+  <button class="btn-agregar" onclick="agregar()">Agregar</button>
+
+  <ul id="lista"></ul>
+
+  <div class="total">Total: $<span id="total">0</span></div>
+
+  <input type="number" id="pago" placeholder="Pago del cliente">
+
+  <button class="btn-calcular" onclick="calcular()">Calcular</button>
+
+  <div class="vuelto">Vuelto: $<span id="vuelto">0</span></div>
+
+  <button class="btn-print" onclick="imprimirTicket()">🧾 Imprimir Ticket</button>
+
+  <button class="btn-reset" onclick="reiniciar()">Nuevo Cliente</button>
+</div>
+
+<script>
+let total = 0;
+let productos = [];
+
+function agregar() {
+  let producto = document.getElementById("producto").value;
+  let precio = Number(document.getElementById("precio").value);
+  let cantidad = Number(document.getElementById("cantidad").value);
+
+  if (!producto || !precio || !cantidad) return;
+
+  let subtotal = precio * cantidad;
+  total += subtotal;
+
+  productos.push({producto, cantidad, precio, subtotal});
+
+  let li = document.createElement("li");
+
+  let texto = document.createElement("span");
+  texto.textContent = `${producto} (${cantidad} x $${precio})`;
+
+  let btn = document.createElement("button");
+  btn.textContent = "❌";
+  btn.className = "delete-btn";
+
+  btn.onclick = function() {
+    total -= subtotal;
+    productos = productos.filter(p => p !== productos.find(x => x.producto === producto && x.subtotal === subtotal));
+    document.getElementById("total").textContent = total;
+    li.remove();
+  };
+
+  li.appendChild(texto);
+  li.appendChild(btn);
+
+  document.getElementById("lista").appendChild(li);
+  document.getElementById("total").textContent = total;
+
+  document.getElementById("producto").value = "";
+  document.getElementById("precio").value = "";
+  document.getElementById("cantidad").value = 1;
+}
+
+function calcular() {
+  let pago = Number(document.getElementById("pago").value);
+  let vuelto = pago - total;
+  document.getElementById("vuelto").textContent = vuelto;
+}
+
+function imprimirTicket() {
+  let pago = Number(document.getElementById("pago").value);
+  let vuelto = pago - total;
+
+  let contenido = `
+    <div id="ticket">
+      <h2>🧾 MI NEGOCIO</h2>
+      <p>${new Date().toLocaleString()}</p>
+      <hr>
+
+      ${productos.map(p => `
+        <div class="item">
+          <span>${p.producto} x${p.cantidad}</span>
+          <span>$${p.subtotal}</span>
+        </div>
+      `).join("")}
+
+      <hr>
+
+      <h3>Total: $${total}</h3>
+      <p>Pago: $${pago}</p>
+      <p>Vuelto: $${vuelto}</p>
+
+      <hr>
+      <p>¡Gracias por su compra!</p>
+
+      <button onclick="window.print()" class="btn-print">🖨️ IMPRIMIR</button>
+      <button onclick="location.reload()" class="btn-reset">⬅ Volver</button>
+    </div>
+  `;
+
+  document.body.innerHTML = contenido;
+}
+
+function reiniciar() {
+  total = 0;
+  productos = [];
+  document.getElementById("lista").innerHTML = "";
+  document.getElementById("total").textContent = 0;
+  document.getElementById("vuelto").textContent = 0;
+  document.getElementById("pago").value = "";
+}
+</script>
+
+</body>
+</html>
